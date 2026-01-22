@@ -1,0 +1,2 @@
+result_$index = $function($args)
+print(result_$index, flush=True)
