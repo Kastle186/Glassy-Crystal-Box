@@ -27,7 +27,7 @@ class Backend(ABC):
 
     @property
     @abstractmethod
-    def run_command(self) -> str:
+    def run_command(self) -> str | None:
         pass
 
     @abstractmethod
@@ -57,14 +57,14 @@ class Backend(ABC):
 
         if build_result is None:
             print_error(
-                f'\nBuild tools for {self.LANGUAGE} were not found or could '
+                f'Build tools for {self.LANGUAGE} were not found or could '
                 'not be run.'
             )
             return
 
         if build_result.exit_code != 0:
             print_error(
-                '\nSomething went wrong during the build. Check the '
+                'Something went wrong during the build. Check the '
                 'error messages output by the build step:\n'
             )
 
@@ -73,7 +73,7 @@ class Backend(ABC):
             return
 
         if not (run_result := self._run()):
-            print_error(f'\n{self.LANGUAGE} was not found or could not be run.')
+            print_error(f'{self.LANGUAGE} was not found or could not be run.')
             return
 
         # Set the results to each test, so that the next step in the
@@ -84,6 +84,9 @@ class Backend(ABC):
                                suite.tests,
                                fillvalue='<missing output>'):
             test_case.stdout = test_output.rstrip() or '<empty>'
+
+        if run_result.err_pipe:
+            suite.stderr_lines = run_result.err_pipe
 
         self.cleanup()
 

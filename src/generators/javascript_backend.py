@@ -1,4 +1,4 @@
-# File: python_backend
+# File: javascript_backend
 
 import contextlib
 import os
@@ -10,8 +10,8 @@ from src.generators.backend import Backend
 from src.suite import Suite
 
 
-class PythonBackend(Backend):
-    LANGUAGE = ProgrammingLanguage.PYTHON
+class JavascriptBackend(Backend):
+    LANGUAGE = ProgrammingLanguage.JAVASCRIPT
 
     @property
     def build_command(self) -> str | None:
@@ -19,10 +19,8 @@ class PythonBackend(Backend):
 
     @property
     def run_command(self) -> str | None:
-        commands = ['py', 'python', 'python3']
-        for cmd in commands:
-            if shutil.which(cmd):
-                return f'{cmd} {self.tester_script}'
+        if shutil.which('node'):
+            return f'node {self.tester_script}'
         return None
 
     def generate_script(self, suite: Suite) -> None:
@@ -31,7 +29,6 @@ class PythonBackend(Backend):
         tests = [
             templates['test'].substitute({
                 'index': i,
-                'function': suite.function_name,
                 'args': ', '.join(map(str, tst_case.inputs))
             })
             for i, tst_case in enumerate(suite.tests, start=1)
@@ -43,7 +40,7 @@ class PythonBackend(Backend):
             'test_cases': '\n'.join(tests)
         })
 
-        script_name = 'python_runner.py'
+        script_name = 'js_runner.mjs'
         self.tester_script = Path.cwd() / script_name
 
         with open(self.tester_script, 'w') as f:

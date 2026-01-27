@@ -101,6 +101,7 @@ class Suite:
 
     source_file_path: Path
     function_name: str
+    stderr_lines: list[str] | None
     tests: list[TestCaseDescription]
 
     passed: int
@@ -112,6 +113,7 @@ class Suite:
         # exists, and "source_file" has been converted to "Path".
         self.source_file_path = suite_data[ConfigField.SOURCE_FILE]
         self.function_name = suite_data[ConfigField.FUNCTION_NAME]
+        self.stderr = None
 
         self.tests = [
             TestCaseDescription(
@@ -143,7 +145,7 @@ class Suite:
                 self.not_run += 1
 
     def to_color_print(self) -> str:
-        return '\n'.join([
+        lines = [
             '\n',
             make_banner(f'Suite of {self.source_file_name}', '*', Color.LIGHT_BLUE),
             colorize(f'\nFunction executed: {self.function_name}', Color.CYAN),
@@ -154,4 +156,14 @@ class Suite:
             colorize(f'\nPassed: {self.passed}', Color.LIGHT_GREEN),
             colorize(f'Failed: {self.failed}', Color.LIGHT_RED),
             colorize(f'Not Run: {self.not_run}', Color.LIGHT_YELLOW)
-        ])
+        ]
+
+        if self.stderr_lines:
+            lines.extend([
+                '',
+                make_banner('Errors', '=', Color.RED),
+                '',
+                '\n'.join(colorize(line, Color.RED) for line in self.stderr_lines)
+            ])
+
+        return '\n'.join(lines)

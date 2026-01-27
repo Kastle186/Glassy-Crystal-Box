@@ -53,6 +53,7 @@ class LanguageExtensionMapping(Enum):
 class ProcessResult(NamedTuple):
     exit_code: int
     output: list[str]
+    err_pipe: list[str]
 
 
 def run_process(cmdargs: str | list[str]) -> ProcessResult:
@@ -71,7 +72,7 @@ def run_process(cmdargs: str | list[str]) -> ProcessResult:
     process = subprocess.Popen(
         args=cmdargs,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, # Get stderr together with stdout.
+        stderr=subprocess.PIPE,
         text=True,
         bufsize=1
     )
@@ -80,5 +81,14 @@ def run_process(cmdargs: str | list[str]) -> ProcessResult:
     for line in process.stdout:
         output_lines.append(line.rstrip())
 
+    err_lines = []
+    for line in process.stderr:
+        err_lines.append(line.rstrip())
+
     process.wait()
-    return ProcessResult(exit_code=process.returncode, output=output_lines)
+
+    return ProcessResult(
+        exit_code=process.returncode,
+        output=output_lines,
+        err_pipe=err_lines
+    )

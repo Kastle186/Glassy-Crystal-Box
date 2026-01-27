@@ -41,7 +41,10 @@ def setup_tests(json_config_file: str | PathLike) -> list[Suite]:
                     'not be read correctly.')
         return []
 
-    base_path = Path(data.get(ConfigField.BASE_PATH, ''))
+    if base_path_value := data.get(ConfigField.BASE_PATH):
+        base_path = Path(base_path_value).expanduser().resolve()
+    else:
+        base_path = None
 
     if not (suites_data := data.get(ConfigField.SUITES)):
         print_error(f'The "{ConfigField.SUITES}" field is missing from '
@@ -60,10 +63,13 @@ def setup_tests(json_config_file: str | PathLike) -> list[Suite]:
     return result
 
 
-def _parse_suite_data(base_path: Path, suite_desc: dict[str, Any]) -> Suite | None:
+def _parse_suite_data(base_path: Path | None, suite_desc: dict[str, Any]) -> Suite | None:
     # If "source" was missing or invalid, validate_suite_data() will catch it.
-    suite_desc[ConfigField.SOURCE_FILE] = \
-        (base_path / Path(suite_desc.get(ConfigField.SOURCE_FILE, ''))).resolve()
+    suite_desc[ConfigField.SOURCE_FILE] = (
+        base_path / suite_desc.get(ConfigField.SOURCE_FILE, '')
+        if base_path is not None
+        else Path(suite_desc.get(ConfigField.SOURCE_FILE, '')).expanduser().resolve()
+    )
 
     if not _validate_suite_data(suite_desc):
         print_warning('Suite description was malformed or is missing data. '

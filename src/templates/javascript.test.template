@@ -1,0 +1,2 @@
+    const result_$index = fn($args);
+    process.stdout.write(result_$index + "\n");

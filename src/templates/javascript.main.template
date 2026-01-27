@@ -1,0 +1,30 @@
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
+
+(async () => {
+    const modulePath = '$src';
+    const functionName = '$function';
+
+    const absPath = path.resolve(modulePath);
+    const fileUrl = pathToFileURL(absPath).href;
+    const theModule = await import(fileUrl);
+
+    const fn =
+        theModule.default?.[functionName] ??
+        theModule[functionName] ??
+        (functionName === 'default' ? theModule.default : undefined);
+
+    if (typeof fn !== 'function') {
+        throw new Error('Function ' + functionName + ' was not found.');
+    }
+
+$test_cases
+
+    process.exit(0);
+})().catch(err => {
+    console.error(JSON.stringify({
+        error: err.message,
+        stack: err.stack
+    }));
+    process.exit(1);
+})
