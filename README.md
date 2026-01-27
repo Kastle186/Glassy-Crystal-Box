@@ -110,6 +110,7 @@ two functions, from two separate files, with three test cases each would look li
 **Functional:**
 
 - Python
+- JavaScript
 
 **Planned Next:**
 
@@ -117,8 +118,16 @@ two functions, from two separate files, with three test cases each would look li
 - C++
 - Go
 - Java
-- JavaScript
 - Ruby
+
+#### JavaScript Note
+
+For working with JavaScript files, make sure to export the functions you want
+to test, so that Glassy Crystal Box can find them.
+
+```javascript
+export function myFunction() { ... }
+```
 
 ## Scope and Limitations
 
