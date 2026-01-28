@@ -13,12 +13,10 @@ from src.suite import Suite
 class PythonBackend(Backend):
     LANGUAGE = ProgrammingLanguage.PYTHON
 
-    @property
-    def build_command(self) -> str | None:
+    def get_build_command(self, src: Path) -> str | None:
         return 'nobuild'
 
-    @property
-    def run_command(self) -> str | None:
+    def get_run_command(self) -> str | None:
         commands = ['py', 'python', 'python3']
         for cmd in commands:
             if shutil.which(cmd):

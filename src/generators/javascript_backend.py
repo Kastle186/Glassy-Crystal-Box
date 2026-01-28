@@ -13,12 +13,10 @@ from src.suite import Suite
 class JavascriptBackend(Backend):
     LANGUAGE = ProgrammingLanguage.JAVASCRIPT
 
-    @property
-    def build_command(self) -> str | None:
+    def get_build_command(self, src: Path) -> str | None:
         return 'nobuild'
 
-    @property
-    def run_command(self) -> str | None:
+    def get_run_command(self) -> str | None:
         if shutil.which('node'):
             return f'node {self.tester_script}'
         return None

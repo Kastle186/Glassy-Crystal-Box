@@ -20,14 +20,12 @@ class Backend(ABC):
     LANGUAGE: ProgrammingLanguage
     tester_script: Path
 
-    @property
     @abstractmethod
-    def build_command(self) -> str | None:
+    def get_build_command(self, src: Path) -> str | None:
         pass
 
-    @property
     @abstractmethod
-    def run_command(self) -> str | None:
+    def get_run_command(self) -> str | None:
         pass
 
     @abstractmethod
@@ -53,7 +51,7 @@ class Backend(ABC):
         """
 
         self.generate_script(suite)
-        build_result = self._build()
+        build_result = self._build(suite.source_file_path)
 
         if build_result is None:
             print_error(
@@ -122,7 +120,7 @@ class Backend(ABC):
 
         return result
 
-    def _build(self) -> ProcessResult | None:
+    def _build(self, src: Path) -> ProcessResult | None:
         """
         Runs the corresponding tool/compiler on the given source file to build
         it and generate the executable. This command is specified in the
@@ -132,16 +130,18 @@ class Backend(ABC):
             Exit code from the build tool/compiler (e.g. gcc, g++).
         """
 
+        build_cmd = self.get_build_command(src)
+
         # We have set the build command to return 'nobuild' for languages that
         # don't need a build to run (e.g. Python, Ruby).
-        if self.build_command == 'nobuild':
-            return ProcessResult(exit_code=0, output=[])
+        if build_cmd == 'nobuild':
+            return ProcessResult(exit_code=0, output=[], err_pipe=[])
 
         # If the build tools are not installed, then we return None.
-        if self.build_command is None:
+        if build_cmd is None:
             return None
 
-        return run_process(self.build_command)
+        return run_process(build_cmd)
 
     def _run(self) -> ProcessResult | None:
         """
@@ -153,9 +153,11 @@ class Backend(ABC):
             List with the lines printed by the script.
         """
 
+        run_cmd = self.get_run_command()
+
         # If the language's runtime is not installed, then the run command
         # is represented as None.
-        if self.run_command is None:
+        if run_cmd is None:
             return None
 
-        return run_process(self.run_command)
+        return run_process(run_cmd)
