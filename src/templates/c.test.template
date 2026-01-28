@@ -1,0 +1,2 @@
+    $ret_type result_$index = $function($args);
+    printf("$format_identifier\n", result_$index);

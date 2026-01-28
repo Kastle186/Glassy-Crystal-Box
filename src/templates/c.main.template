@@ -1,0 +1,8 @@
+#include <stdio.h>
+
+$ret_type $function($arg_types);
+
+int main(void) {
+$test_cases
+    return 0;
+}
