@@ -4,7 +4,7 @@ import importlib
 import inspect
 from pathlib import Path
 
-from src.common import ProgrammingLanguage
+from src.utils.common import ProgrammingLanguage
 from src.generators.backend import Backend
 
 

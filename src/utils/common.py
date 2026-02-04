@@ -8,7 +8,7 @@ import subprocess
 from enum import Enum, StrEnum, auto
 from typing import NamedTuple
 
-from src.text_utils import print_critical
+from src.utils.text_utils import print_critical
 
 
 class ConfigField(StrEnum):

@@ -10,9 +10,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Any
 
-from src.common import ConfigField
-from src.suite import Suite
-from src.text_utils import Color, colorize, print_error, print_warning
+from src.utils.common import ConfigField
+from src.models.suite import Suite
+from src.utils.text_utils import Color, colorize, print_error, print_warning
 
 
 def setup_tests(json_config_file: str | PathLike) -> list[Suite]:

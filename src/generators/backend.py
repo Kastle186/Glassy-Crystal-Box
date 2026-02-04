@@ -5,9 +5,9 @@ from itertools import zip_longest
 from pathlib import Path
 from string import Template
 
-from src.common import ProcessResult, ProgrammingLanguage, run_process
-from src.suite import Suite
-from src.text_utils import Color, colorize, print_error
+from src.utils.common import ProcessResult, ProgrammingLanguage, run_process
+from src.models.suite import Suite
+from src.utils.text_utils import Color, colorize, print_error
 
 
 class Backend(ABC):

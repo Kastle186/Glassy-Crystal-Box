@@ -5,9 +5,9 @@ import os
 import shutil
 from pathlib import Path
 
-from src.common import ProgrammingLanguage
+from src.utils.common import ProgrammingLanguage
 from src.generators.backend import Backend
-from src.suite import Suite
+from src.models.suite import Suite
 
 
 class PythonBackend(Backend):

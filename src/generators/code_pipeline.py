@@ -1,9 +1,9 @@
 # File: code_pipeline.py
 
-from src.common import LanguageExtensionMapping, ProgrammingLanguage
+from src.utils.common import LanguageExtensionMapping, ProgrammingLanguage
 from src.generators.backend import Backend
 from src.generators.backend_provider import get_backend
-from src.suite import Suite
+from src.models.suite import Suite
 
 
 class CodePipeline:

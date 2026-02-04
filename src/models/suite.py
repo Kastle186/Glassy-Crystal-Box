@@ -10,8 +10,8 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, ClassVar
 
-from src.common import ConfigField
-from src.text_utils import Color, colorize, make_banner
+from src.utils.common import ConfigField
+from src.utils.text_utils import Color, colorize, make_banner
 
 
 class TestStatus(StrEnum):
