@@ -4,6 +4,7 @@ import contextlib
 import os
 import shutil
 from pathlib import Path
+from string import Template
 
 from src.utils.common import ProgrammingLanguage
 from src.generators.backend import Backend
@@ -11,7 +12,13 @@ from src.models.suite import Suite
 
 
 class JavascriptBackend(Backend):
-    LANGUAGE = ProgrammingLanguage.JAVASCRIPT
+    """
+    Inheriting Backend class for JavaScript specific functionality.
+    """
+
+    def __init__(self):
+        self.language = ProgrammingLanguage.JAVASCRIPT
+        super().__init__()
 
     def get_build_command(self, src: Path) -> str | None:
         return 'nobuild'
@@ -21,28 +28,30 @@ class JavascriptBackend(Backend):
             return f'node {self.tester_script}'
         return None
 
-    def generate_script(self, suite: Suite) -> None:
-        templates = self.fetch_templates()
+    def get_and_fill_script_template(
+            self,
+            templates: dict[str, Template],
+            suite: Suite,
+            tests: list[str]
+    ) -> str:
+        return templates['main'].substitute({
+            'src': suite.source_file_path.as_posix(),
+            'function': suite.function_name,
+            'test_cases': '\n'.join(tests)
+        })
 
-        tests = [
+    def get_and_fill_tests_template(
+            self,
+            templates: dict[str, Template],
+            suite: Suite
+    ) -> list[str]:
+        return [
             templates['test'].substitute({
                 'index': i,
                 'args': ', '.join(map(str, tst_case.inputs))
             })
             for i, tst_case in enumerate(suite.tests, start=1)
         ]
-
-        script = templates['main'].substitute({
-            'src': suite.source_file_path.as_posix(),
-            'function': suite.function_name,
-            'test_cases': '\n'.join(tests)
-        })
-
-        script_name = 'js_runner.mjs'
-        self.tester_script = Path.cwd() / script_name
-
-        with open(self.tester_script, 'w') as f:
-            f.write(f'{script}\n')
 
     def cleanup(self) -> None:
         with contextlib.suppress(FileNotFoundError):

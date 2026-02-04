@@ -5,7 +5,13 @@ from itertools import zip_longest
 from pathlib import Path
 from string import Template
 
-from src.utils.common import ProcessResult, ProgrammingLanguage, run_process
+from src.utils.common import (
+    ProcessResult,
+    ProgrammingLanguage,
+    LanguageExtensionMapping,
+    run_process
+)
+
 from src.models.suite import Suite
 from src.utils.text_utils import Color, colorize, print_error
 
@@ -17,8 +23,13 @@ class Backend(ABC):
     and provide the interfaces to build those sources and execute them.
     """
 
-    LANGUAGE: ProgrammingLanguage
+    language: ProgrammingLanguage
     tester_script: Path
+
+    def __init__(self):
+        ext = LanguageExtensionMapping(self.language).name.lower()
+        script_name = f'{self.language}_runner.{ext}'
+        self.tester_script = Path.cwd() / script_name
 
     @abstractmethod
     def get_build_command(self, src: Path) -> str | None:
@@ -29,12 +40,33 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def generate_script(self, suite: Suite) -> None:
+    def get_and_fill_script_template(
+            self,
+            templates: dict[str, Template],
+            suite: Suite,
+            tests: list[str]
+    ) -> str:
+        pass
+
+    @abstractmethod
+    def get_and_fill_tests_template(
+            self,
+            templates: dict[str, Template],
+            suite: Suite
+    ) -> list[str]:
         pass
 
     @abstractmethod
     def cleanup(self) -> None:
         pass
+
+    def generate_script(self, suite: Suite) -> None:
+        templates = self.fetch_templates()
+        tests = self.get_and_fill_tests_template(templates, suite)
+        script = self.get_and_fill_script_template(templates, suite, tests)
+
+        with open(self.tester_script, 'w') as f:
+            f.write(f'{script}\n')
 
     def execute_pipeline(self, suite: Suite) -> None:
         """
@@ -55,7 +87,7 @@ class Backend(ABC):
 
         if build_result is None:
             print_error(
-                f'Build tools for {self.LANGUAGE} were not found or could '
+                f'Build tools for {self.language} were not found or could '
                 'not be run.'
             )
             return
@@ -71,7 +103,7 @@ class Backend(ABC):
             return
 
         if not (run_result := self._run()):
-            print_error(f'{self.LANGUAGE} was not found or could not be run.')
+            print_error(f'{self.language} was not found or could not be run.')
             return
 
         # Set the results to each test, so that the next step in the
@@ -102,7 +134,7 @@ class Backend(ABC):
 
         templates_dir = Path(__file__).resolve().parent.parent / 'templates'
         templates_files = [item for item in templates_dir.iterdir()
-                           if item.is_file() and item.name.startswith(self.LANGUAGE)]
+                           if item.is_file() and item.name.startswith(self.language)]
 
         result = {}
 
