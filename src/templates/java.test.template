@@ -1,0 +1,2 @@
+        Object result = method.invoke(null, $args);
+        System.out.println(result);

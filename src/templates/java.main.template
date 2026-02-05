@@ -1,0 +1,46 @@
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+
+public class GlassyCrystalBox$class_id {
+
+    public static void main(String[] args) {
+        String srcDir = "$src_dir";
+        String functionName = "$the_function";
+        File dir = new File(srcDir);
+
+        URLClassLoader loader = URLClassLoader.newInstance(
+            new URL[]{ dir.toURI().toURL() }
+        );
+
+        Method method = null;
+        Class<?> owner = null;
+
+        for (File f : dir.listFiles(file -> file.getName().endsWith(".class"))) {
+            String className = f.getName().replace(".class", "");
+            Class<?> cls = Class.forName(className, true, loader);
+
+            for (Method m : cls.getDeclaredMethods()) {
+                if (
+                    m.getName().equals(targetMethodName)
+                    && Modifier.isPublic(m.getModifiers())
+                    && Modifier.isStatic(m.getModifiers())
+                ) {
+                    if (method != null) {
+                        throw new RuntimeException("Multiple matching methods found");
+                    }
+
+                    method = m;
+                    owner = cls;
+                }
+            }
+        }
+
+        if (method == null) {
+            throw new RuntimeException("Method not found");
+        }
+
+$test_cases
+    }
+}

@@ -1,14 +1,11 @@
-# File: python_backend
+# File: python_backend.py
 
-import contextlib
-import os
 import shutil
-from pathlib import Path
 from string import Template
 
-from src.utils.common import ProgrammingLanguage
 from src.generators.backend import Backend
 from src.models.suite import Suite
+from src.utils.common import ProgrammingLanguage
 
 
 class PythonBackend(Backend):
@@ -20,10 +17,8 @@ class PythonBackend(Backend):
         self.language = ProgrammingLanguage.PYTHON
         super().__init__()
 
-    def get_build_command(self, src: Path) -> str | None:
-        return 'nobuild'
-
-    def get_run_command(self) -> str | None:
+    @property
+    def run_command(self) -> str | None:
         commands = ['py', 'python', 'python3']
         for cmd in commands:
             if shutil.which(cmd):
@@ -55,7 +50,3 @@ class PythonBackend(Backend):
             })
             for i, tst_case in enumerate(suite.tests, start=1)
         ]
-
-    def cleanup(self) -> None:
-        with contextlib.suppress(FileNotFoundError):
-            os.remove(self.tester_script)

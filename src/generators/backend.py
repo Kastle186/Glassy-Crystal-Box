@@ -1,14 +1,17 @@
 # File: backend.py
 
+import contextlib
+import os
+
 from abc import ABC, abstractmethod
 from itertools import zip_longest
 from pathlib import Path
 from string import Template
 
 from src.utils.common import (
+    LanguageExtensionMapping,
     ProcessResult,
     ProgrammingLanguage,
-    LanguageExtensionMapping,
     run_process
 )
 
@@ -26,17 +29,15 @@ class Backend(ABC):
     language: ProgrammingLanguage
     tester_script: Path
 
+
     def __init__(self):
         ext = LanguageExtensionMapping(self.language).name.lower()
         script_name = f'{self.language}_runner.{ext}'
         self.tester_script = Path.cwd() / script_name
 
+    @property
     @abstractmethod
-    def get_build_command(self, src: Path) -> str | None:
-        pass
-
-    @abstractmethod
-    def get_run_command(self) -> str | None:
+    def run_command(self) -> str | None:
         pass
 
     @abstractmethod
@@ -56,21 +57,27 @@ class Backend(ABC):
     ) -> list[str]:
         pass
 
-    @abstractmethod
-    def cleanup(self) -> None:
-        pass
-
-    def generate_script(self, suite: Suite) -> None:
-        templates = self.fetch_templates()
-        tests = self.get_and_fill_tests_template(templates, suite)
-        script = self.get_and_fill_script_template(templates, suite, tests)
-
-        with open(self.tester_script, 'w') as f:
-            f.write(f'{script}\n')
-
-    def execute_pipeline(self, suite: Suite) -> None:
+    def setup(self, suite: Suite) -> bool:
         """
-        Carries out the entire process:
+        Performs any necessary setup to run the tests. The only essential thing
+        to do is to generate the test script. However, compiled languages have
+        more steps to follow. Each of their inheriting classes will override
+        this base method with their own implementation.
+
+        Args:
+            suite: Object with all the necessary information about the source.
+
+        Returns:
+            Flag denoting success or failure.
+        """
+
+        self.generate_script(suite)
+        return True
+
+    def execute(self, suite: Suite):
+        """
+        Main method in charge of carrying out the backend's workflow:
+        * Setup things as needed
         * Generate the test script
         * Build the script
         * Run the script
@@ -82,32 +89,16 @@ class Backend(ABC):
                    and run the tests.
         """
 
-        self.generate_script(suite)
-        build_result = self._build(suite.source_file_path)
-
-        if build_result is None:
-            print_error(
-                f'Build tools for {self.language} were not found or could '
-                'not be run.'
-            )
+        if not self.setup(suite):
+            print_error(f'{self.language.capitalize()} Backend failed to initialize.')
             return
 
-        if build_result.exit_code != 0:
-            print_error(
-                'Something went wrong during the build. Check the '
-                'error messages output by the build step:\n'
-            )
-
-            for line in build_result.output:
-                print(colorize(line, Color.LIGHT_RED))
-            return
-
-        if not (run_result := self._run()):
+        if not (run_result := self._run_tester()):
             print_error(f'{self.language} was not found or could not be run.')
             return
 
-        # Set the results to each test, so that the next step in the
-        # pipeline can evaluate correctness or failure.
+            # Set the results to each test, so that the next step in the
+            # pipeline can evaluate correctness or failure.
 
         for test_output, test_case \
                 in zip_longest(run_result.output,
@@ -119,6 +110,33 @@ class Backend(ABC):
             suite.stderr_lines = run_result.err_pipe
 
         self.cleanup()
+
+    def cleanup(self) -> None:
+        """
+        Deletes all the files created to run the tests. Compiled languages also
+        generate other object files and whatnot, so they will implement their
+        own forms of cleaning up.
+        """
+
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(self.tester_script)
+
+    def generate_script(self, suite: Suite) -> None:
+        """
+        Uses the corresponding programming language's template files, and fills
+        them up. Then, writes down this new script into its own file.
+
+        Args:
+            suite: Object with all the necessary information to generate
+                   and run the tests.
+        """
+
+        templates = self.fetch_templates()
+        tests = self.get_and_fill_tests_template(templates, suite)
+        script = self.get_and_fill_script_template(templates, suite, tests)
+
+        with open(self.tester_script, 'w') as f:
+            f.write(f'{script}\n')
 
     def fetch_templates(self) -> dict[str, Template]:
         """
@@ -152,30 +170,7 @@ class Backend(ABC):
 
         return result
 
-    def _build(self, src: Path) -> ProcessResult | None:
-        """
-        Runs the corresponding tool/compiler on the given source file to build
-        it and generate the executable. This command is specified in the
-        property build_command by each of the inheriting language classes.
-
-        Returns:
-            Exit code from the build tool/compiler (e.g. gcc, g++).
-        """
-
-        build_cmd = self.get_build_command(src)
-
-        # We have set the build command to return 'nobuild' for languages that
-        # don't need a build to run (e.g. Python, Ruby).
-        if build_cmd == 'nobuild':
-            return ProcessResult(exit_code=0, output=[], err_pipe=[])
-
-        # If the build tools are not installed, then we return None.
-        if build_cmd is None:
-            return None
-
-        return run_process(build_cmd)
-
-    def _run(self) -> ProcessResult | None:
+    def _run_tester(self) -> ProcessResult | None:
         """
         Invokes the given language's runtime to run the generated executable
         with the test cases. Said command is specified by each of the
@@ -185,11 +180,9 @@ class Backend(ABC):
             List with the lines printed by the script.
         """
 
-        run_cmd = self.get_run_command()
-
         # If the language's runtime is not installed, then the run command
         # is represented as None.
-        if run_cmd is None:
+        if self.run_command is None:
             return None
 
-        return run_process(run_cmd)
+        return run_process(self.run_command)

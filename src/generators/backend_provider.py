@@ -4,8 +4,8 @@ import importlib
 import inspect
 from pathlib import Path
 
-from src.utils.common import ProgrammingLanguage
 from src.generators.backend import Backend
+from src.utils.common import ProgrammingLanguage
 
 
 def get_backend(language: ProgrammingLanguage) -> Backend:
@@ -36,7 +36,7 @@ def get_backend(language: ProgrammingLanguage) -> Backend:
             module = importlib.import_module(full_module_name)
 
             for class_name, class_obj in inspect.getmembers(module, inspect.isclass):
-                if vars(class_obj).get('LANGUAGE', None) == language:
+                if vars(class_obj).get('language', None) == language:
                     return class_obj()
 
         except ImportError:
